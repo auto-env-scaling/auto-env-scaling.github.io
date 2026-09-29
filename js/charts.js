@@ -981,13 +981,8 @@ function selfplayTip(plotted, step, base) {
 function renderTraining(container, data) {
   const runs = TRAIN_RUNS.filter((r) => data.runs[r.key]);
   const series = Object.fromEntries(runs.map((r) => [r.key, TRAIN_PANELS.map((p) => trainingSeries(data, r.key, p))]));
-  // The one extrapolated stretch (Tmax steps 163-200), named in a single note line.
-  const ex = runs.map((r) => ({ r, s: series[r.key][0] })).find(({ s }) => s.extrapolated.some(Boolean));
-  const note = ex
-    ? `Dashed: ${ex.r.label} steps ${ex.s.steps[ex.s.extrapolated.indexOf(true)]} to ${ex.s.steps[ex.s.steps.length - 1]} are extrapolated from earlier steps.`
-    : null;
   const st = { w: 0 };
-  const ui = frame(container, { controls: legend(...runs.map((r) => legendItem(keyLine(r.color), r.label))), note });
+  const ui = frame(container, { controls: legend(...runs.map((r) => legendItem(keyLine(r.color), r.label))) });
   ui.summary.textContent = trainingSummary(data);
 
   function draw() {
@@ -1020,18 +1015,14 @@ function renderTraining(container, data) {
 
       for (const r of runs) { // Tmax first, AutoEnvScaling on top
         const s = series[r.key][i];
-        const cut = s.extrapolated.indexOf(true);
-        const split = cut < 0 ? s.steps.length : cut;
-        const path = (from, to, pick) => {
+        const path = (pick) => {
           const pts = [];
-          for (let k = Math.max(0, from); k < to; k++) if (pick[k] != null) pts.push(`${r2(X(s.steps[k]))},${r2(Y(pick[k]))}`);
+          for (let k = 0; k < s.steps.length; k++) if (pick[k] != null) pts.push(`${r2(X(s.steps[k]))},${r2(Y(pick[k]))}`);
           return pts.length > 1 ? `M${pts.join('L')}` : '';
         };
         const stroke = `stroke:${r.color}`;
-        root.append(svg('path', { class: 'ch-faint', d: path(0, split, s.values), style: stroke }));
-        if (split < s.steps.length) root.append(svg('path', { class: 'ch-faint is-extra', d: path(split - 1, s.steps.length, s.values), style: stroke }));
-        root.append(svg('path', { class: 'ch-trend', d: path(0, split, s.mean), style: stroke }));
-        if (split < s.steps.length) root.append(svg('path', { class: 'ch-trend is-extra', d: path(split - 1, s.steps.length, s.mean), style: stroke }));
+        root.append(svg('path', { class: 'ch-faint', d: path(s.values), style: stroke }));
+        root.append(svg('path', { class: 'ch-trend', d: path(s.mean), style: stroke }));
       }
       return { b, X, Y };
     });
@@ -1090,7 +1081,7 @@ function trainingTip(step, k, runs, series) {
       const s = series[r.key][pi];
       const v = s.values[k].toFixed(p.dec);
       const mean = s.mean[k] == null ? '' : `, ${s.window}-step mean ${s.mean[k].toFixed(p.dec)}`;
-      nodes.push(tipRow(r.color, v, `${r.label}${mean}`, { kind: s.extrapolated[k] ? 'dash' : '' }));
+      nodes.push(tipRow(r.color, v, `${r.label}${mean}`));
       said.push(`${r.label}: ${v}${mean}`);
     }
   });

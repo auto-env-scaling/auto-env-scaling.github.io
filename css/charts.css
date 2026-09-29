@@ -58,8 +58,6 @@
 .ch-line { fill: none; stroke-linejoin: round; stroke-linecap: round; }
 .ch-faint { fill: none; stroke-width: 1; opacity: .16; stroke-linejoin: round; }
 .ch-trend { fill: none; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
-.ch-faint.is-extra { stroke-dasharray: 3 3; opacity: .12; }
-.ch-trend.is-extra { stroke-dasharray: 5 4; stroke-linecap: butt; }
 .ch-ref { stroke: var(--ch-ref); stroke-width: 1.5; stroke-dasharray: 1.5 3.5; stroke-linecap: round; }
 
 /* Text on the plot */
