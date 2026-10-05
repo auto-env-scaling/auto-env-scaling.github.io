@@ -4,9 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AutoEnvScaling: Automating the Data Flywheel with Terminal Agents</title>
-<meta name="description" content="A proposer agent builds RL environments as terminal tasks from the rollouts of the solver being trained. One model can play both roles and improve itself.">
+<meta name="description" content="A proposer agent builds RL environments as terminal tasks from the rollouts of the solver being trained, toward recursive self-improvement: one model co-evolves as proposer and solver.">
 <meta property="og:title" content="AutoEnvScaling: Automating the Data Flywheel with Terminal Agents">
 <meta property="og:description" content="Environment design as a terminal task: a proposer agent builds, tests, and calibrates RL environments from the solver's rollouts.">
+<link rel="canonical" href="https://auto-env-scaling.github.io/">
+<meta property="og:url" content="https://auto-env-scaling.github.io/">
 <meta property="og:image" content="https://auto-env-scaling.github.io/assets/figs/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -52,7 +54,7 @@
   </div>
 
   <div class="buttons">
-    <a class="btn" href="https://aka.ms/autoenvscaling-paper">Paper</a>
+    <a class="btn" href="https://simonucl.github.io/assets/pdf/autoenvscaling.pdf">Paper</a>
     <a class="btn" href="https://aka.ms/autoenvscaling">Code</a>
     <a class="btn" href="#citation">BibTeX</a>
   </div>
@@ -66,18 +68,18 @@
 
 <figure class="figure teaser">
   <img src="assets/figs/teaser.svg" alt="Three panels. Left: valid-environment rate of eight frontier proposers under Prompt, Prompt plus Env Feedback, and AutoEnvScaling. Middle: Terminal-Bench 2.1 after RL on GPT-5.6-sol environments versus Tmax. Right: Qwen3.6-35B-A3B self-play versus Tmax on Terminal-Bench 2.1.">
-  <figcaption><b>Left:</b> valid-environment rate by generation method. <b>Middle:</b> Terminal-Bench 2.1 after RL, against the static Tmax pool. <b>Right:</b> Qwen3.6-35B-A3B as both proposer and solver.</figcaption>
+  <figcaption><b>Left:</b> valid-environment rate by generation method. <b>Middle:</b> Terminal-Bench 2.1 after RL, against the static Tmax pool. <b>Right:</b> recursive self-improvement, with Qwen3.6-35B-A3B as both proposer and solver.</figcaption>
 </figure>
 
 <section class="section" id="overview">
   <h2>Overview</h2>
   <p>Terminal agents solve tasks in software engineering and scientific research by running commands in a terminal. Training them with reinforcement learning needs diverse, verifiable environments, and researchers still design most of these by hand, so the supply grows only as fast as researchers can work.</p>
   <p><b>AutoEnvScaling</b> treats environment design as a terminal task. A <b>proposer</b> agent reads the rollouts of the <b>solver</b> being trained, then builds, runs, and fixes a new environment inside a sandbox. The host admits the environment only if it validates and suits the current solver, and the solver's new rollouts guide the next round. In a terminal, eight frontier proposers produce valid environments up to 25&times; as often as when they write the task in one response, and training Qwen3.5-35B-A3B on environments from GPT-5.6-sol beats the matched Tmax pool by 4.3 points on Terminal-Bench 2.1.</p>
-  <p>Because building an environment and solving one are both terminal tasks, one model can play both roles. Qwen3.6-35B-A3B, proposing environments for itself, rises from 41.1 to 53.3 on Terminal-Bench 2.1 and from 1.6 to 3.2 on Terminal-Bench 4.0.</p>
+  <p>The broader goal is <b>recursive self-improvement</b> (RSI). Because building an environment and solving one are both terminal tasks, one model can co-evolve in both roles. Acting as both proposer and solver, Qwen3.6-35B-A3B rises from 41.1 to 53.3 on Terminal-Bench 2.1 and from 1.6 to 3.2 on Terminal-Bench 4.0.</p>
 </section>
 
 <section class="section" id="method">
-  <h2>Method</h2>
+  <h2>AutoEnvScaling: Automating the Data Flywheel with Terminal Agents</h2>
   <figure class="figure">
     <img src="assets/figs/method.png" alt="Left: one shared policy acts as proposer and solver; the proposer earns r_P from validation and calibration, the solver earns r_S, the fraction of tests passed. Right: the proposer turns a failed PyTorch seed into a new environment through read, build, write, and test actions." loading="lazy">
     <figcaption>One policy plays both roles (left). The proposer turns a failed PyTorch run into a new environment (right).</figcaption>
@@ -90,44 +92,46 @@
   <p>The proposer earns 1 for an admitted task, &minus;0.25 if calibration fails, and &minus;1 if validation fails. The solver earns the fraction of tests it passes.</p>
 </section>
 
-<section class="section" id="replay">
-  <h2>A proposer episode, turn by turn</h2>
-  <p>Every episode below starts from a Terminal-Bench run that the solver failed. Pick a case and an author, then step through what the proposer read, built, wrote, and tested.</p>
-  <div id="replay-app" class="app-root"><p class="loading">Loading episodes…</p></div>
-</section>
-
-<section class="section" id="compare">
-  <h2>One failure, three proposers</h2>
-  <p>The same failed run, handed to GPT-5.6-sol, Claude Opus 5, and the Cold-Start Qwen3.6-35B-A3B that we train in self-play. Each column shows how the proposer spent its turns, three moments from its episode, and the environment it shipped.</p>
-  <div id="compare-app" class="app-root"><p class="loading">Loading cases…</p></div>
-</section>
 
 <section class="section" id="results">
-  <h2>Results</h2>
+  <h2>Experiments</h2>
 
-  <h3>Does environment design benefit from a terminal?</h3>
+  <h3>Does Environment Design Benefit from a Terminal?</h3>
   <p>Valid-environment rate of eight frontier proposers. <b>Prompt</b> writes the task in one response; <b>Prompt + Env Feedback</b> also sees build and test errors; <b>AutoEnvScaling</b> works in a terminal.</p>
   <div id="chart-valid" class="chart-root"></div>
   <p>Environments built in a terminal are richer and harder: more data files, longer solver trajectories, and a lower solver pass rate.</p>
   <div id="chart-artifacts" class="chart-root"></div>
 
-  <h3>Model-designed curricula beat static pools</h3>
-  <p>Held-out Terminal-Bench 2.1 (avg@5) after RL on environments from a frontier proposer, against the static Tmax pool at matched training steps.</p>
-  <div id="chart-solver" class="chart-root"></div>
-
-  <h3>One model in both roles</h3>
-  <p>Qwen3.6-35B-A3B proposes environments for itself and trains on them. All runs start from the same Cold-Start checkpoint.</p>
-  <div id="chart-selfplay" class="chart-root"></div>
-  <p>The curriculum stays at the solver's level: AutoEnvScaling keeps 3.1&times; as many rollout groups useful for training as Tmax, so collecting rollouts for each update takes 42% less time.</p>
+  <h3>Results</h3>
+  <p><b>AutoEnvScaling outperforms static environment pools.</b> Held-out Terminal-Bench 2.1 (avg@5) after RL on environments from a frontier proposer, against the static Tmax pool at matched training steps (left).</p>
+  <p><b>Recursive self-improvement.</b> Qwen3.6-35B-A3B acts as both proposer and solver: it builds environments for itself, trains on them, and improves in both roles. All runs start from the same Cold-Start checkpoint (right).</p>
+  <div class="chart-pair">
+    <div id="chart-solver" class="chart-root"></div>
+    <div id="chart-selfplay" class="chart-root"></div>
+  </div>
+  <p><b>Training dynamics.</b> The curriculum stays at the solver's level: AutoEnvScaling keeps 3.1&times; as many rollout groups useful for training as Tmax, so collecting rollouts for each update takes 42% less time.</p>
   <div id="chart-training" class="chart-root"></div>
 
-  <h3>Beyond task performance: learning to ask for help</h3>
+  <h3>Beyond Task Performance: Learning Behavior</h3>
   <p>AutoEnvScaling can also write environments that teach a behavior. On HiL-Bench, instructions leave out information the agent needs, and it must ask for it with an <code>ask_human</code> tool. We train Qwen3.6-35B-A3B on software engineering tasks and evaluate on held-out HiL-Bench tasks.</p>
   <div id="table-hil" class="chart-root"></div>
 </section>
 
+<section class="section" id="qualitative">
+  <h2>Qualitative Study for AutoEnvScaling</h2>
+  <div class="subsection" id="replay">
+  <p>Every episode below starts from a Terminal-Bench run that the solver failed. Pick a case and an author, then step through what the proposer read, built, wrote, and tested.</p>
+  <div id="replay-app" class="app-root"><p class="loading">Loading episodes…</p></div>
+  </div>
+
+  <div class="subsection" id="compare">
+  <p>The same failed run, handed to GPT-5.6-sol, Claude Opus 5, and the Cold-Start Qwen3.6-35B-A3B that we train for recursive self-improvement. Each column shows how the proposer spent its turns, three moments from its episode, and the environment it shipped.</p>
+  <div id="compare-app" class="app-root"><p class="loading">Loading cases…</p></div>
+  </div>
+</section>
+
 <section class="section" id="environments">
-  <h2>Generated environments</h2>
+  <h2>Cross-Domain Environment Generation</h2>
   <p>Harbor tasks written by proposers: terminal environments from the failure study, and environments in six other domains. Open one to read its instruction, image, reference solution, and tests.</p>
   <div id="env-browser" class="app-root"><p class="loading">Loading environments…</p></div>
   <p class="data-note">Shown as the models wrote them, except that machine paths, internal hostnames and addresses, and anything shaped like a credential are replaced (<code>&lt;path&gt;</code>, <code>&lt;ip&gt;</code>, <code>&lt;redacted&gt;</code>), including fake secrets that tasks plant on purpose. Files copied from Terminal-Bench seed tasks are not shown.</p>
@@ -149,6 +153,7 @@
 </main>
 
 <footer class="footer">
+  <p>AutoEnvScaling is part of <a href="https://microsoft.github.io/Orchard-Agentic/">Orchard-Agentic</a>.</p>
   <p>Environments are <a href="https://www.harborframework.com">Harbor</a> tasks. Training uses <a href="https://github.com/radixark/miles">Miles</a>; evaluation uses <a href="https://www.tbench.ai">Terminal-Bench</a> 2.1 and 4.0.</p>
 </footer>
 
